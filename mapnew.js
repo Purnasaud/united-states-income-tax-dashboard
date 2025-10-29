@@ -321,10 +321,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ---------- FORM HANDLER ----------
   const formElement = document.querySelector('form');
+  
+  // Store the current layer globally so we can update it
+  let currentStateLayer = null;
 
-  formElement.addEventListener("submit", (e) => {
-    e.preventDefault();
-
+  const updateMap = () => {
     // clear table
     $table.bootstrapTable('removeAll');
 
@@ -333,6 +334,9 @@ window.addEventListener("DOMContentLoaded", () => {
       .querySelector('input[name="income"]')
       .value.replaceAll(",", "");
     var incomeVal = Number(incomeInput) || 0;
+
+    // Don't proceed if no income entered
+    if (incomeVal === 0) return;
 
     var married = formElement
       .querySelector('input[name="marriedRadios"]:checked')
@@ -424,19 +428,14 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // remove previous dynamic layer(s)
-    try {
-      map.layers.forEach((lyr) => {
-        if (lyr && (lyr.title === 'US States' || lyr.title === 'State Layer')) {
-          map.layers.remove(lyr);
-        }
-      });
-    } catch (err) {
-      console.warn('Error removing previous layer:', err);
+    // remove previous dynamic layer if exists
+    if (currentStateLayer) {
+      map.remove(currentStateLayer);
+      currentStateLayer = null;
     }
 
     // add new dynamic layer from graphics
-    const layer = new FeatureLayer({
+    currentStateLayer = new FeatureLayer({
       source: graphics,
       objectIdField: "ObjectId",
       title: "State Layer",
@@ -459,17 +458,22 @@ window.addEventListener("DOMContentLoaded", () => {
       renderer: getRenderer(mode)
     });
 
-    map.add(layer);
+    map.add(currentStateLayer);
+  };
+
+  formElement.addEventListener("submit", (e) => {
+    e.preventDefault();
+    updateMap();
   });
 
   // ---------- MAP TOGGLE (RE-RENDER) ----------
   const mapToggle = document.getElementById("mapToggle");
   if (mapToggle) {
     mapToggle.addEventListener("change", () => {
-      // Only regenerate if form has been submitted at least once
-      if (formElement.querySelector('input[name="income"]').value) {
-        const event = new Event("submit");
-        formElement.dispatchEvent(event);
+      // Only regenerate if there's income data
+      const incomeInput = formElement.querySelector('input[name="income"]').value.replaceAll(",", "");
+      if (incomeInput && Number(incomeInput) > 0) {
+        updateMap();
       }
     });
   }
