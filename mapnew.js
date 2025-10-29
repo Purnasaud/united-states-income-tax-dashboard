@@ -297,6 +297,7 @@ window.addEventListener("DOMContentLoaded", () => {
       };
     }
 
+    // Default: tax percentage choropleth
     return {
       type: "class-breaks",
       field: "PercentOwed",
@@ -461,12 +462,15 @@ window.addEventListener("DOMContentLoaded", () => {
     map.add(layer);
   });
 
-  // ---------- MAP TOGGLE----------
+  // ---------- MAP TOGGLE (RE-RENDER) ----------
   const mapToggle = document.getElementById("mapToggle");
   if (mapToggle) {
     mapToggle.addEventListener("change", () => {
-      const event = new Event("submit");
-      formElement.dispatchEvent(event); 
+      // Only regenerate if form has been submitted at least once
+      if (formElement.querySelector('input[name="income"]').value) {
+        const event = new Event("submit");
+        formElement.dispatchEvent(event);
+      }
     });
   }
 });
